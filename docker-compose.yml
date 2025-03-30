@@ -1,0 +1,47 @@
+services:
+  deepseek:
+    build:
+      context: ./deepseek-server
+      dockerfile: Dockerfile
+    image: deepseek-api:latest
+    container_name: deepseek-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_ID=deepseek-ai/deepseek-llm-1.3b-base
+      - DEVICE=cpu
+      - MAX_LENGTH=1024
+      - MAX_NEW_TOKENS=512
+      - TEMPERATURE=0.7
+      - DEBUG=false
+    volumes:
+      - deepseek_models:/app/model_cache
+      - ./deepseek-server/logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    image: doc-scraper:latest
+    container_name: doc-scraper
+    depends_on:
+      - deepseek
+    volumes:
+      - ./output:/app/docs
+      - paddle_models:/root/.paddleocr
+    environment:
+      - LLM_ENDPOINT=http://deepseek:8000
+    command: ["python", "advanced_doc_scraper.py", "--help"]
+
+volumes:
+  paddle_models:
+    name: paddle_models
+  deepseek_models:
+    name: deepseek_models

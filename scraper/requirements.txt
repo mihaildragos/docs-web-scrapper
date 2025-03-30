@@ -1,0 +1,9 @@
+beautifulsoup4==4.12.2
+playwright==1.39.0
+requests==2.31.0
+html2text==2020.1.16
+paddleocr==2.7.0
+paddlepaddle==2.5.2
+numpy==1.24.3
+Pillow==10.0.1
+python-dateutil==2.8.2
