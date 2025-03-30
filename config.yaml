@@ -1,0 +1,49 @@
+# Documentation Scraper Configuration
+
+# Global settings
+settings:
+  output_dir: "output"
+  # Optional PDF rendering backend: 'pdfkit' or 'weasyprint'
+  renderer: "pdfkit" 
+  log_level: "INFO"
+
+# Authentication (optional)
+# auth:
+#   type: "basic"  # Options: basic, token, oauth
+#   username: "${USERNAME}"
+#   password: "${PASSWORD}"
+
+# Target documentation sites to scrape
+targets:
+  - name: "PostgreSQL Documentation"
+    base_url: "https://www.postgresql.org/docs/current/"
+    version_selector: ".version"
+    content_selector: "#docContent"
+    output_filename: "postgresql_{version}.pdf"
+    rate_limit: 1  # requests per second
+    
+  - name: "Python Documentation"
+    base_url: "https://docs.python.org/3/"
+    version_selector: ".version"
+    content_selector: ".document"
+    output_filename: "python_{version}.pdf"
+    rate_limit: 2  # requests per second
+    
+  - name: "Flask Documentation"
+    base_url: "https://flask.palletsprojects.com/en/latest/"
+    version_selector: ".version"
+    content_selector: ".document"
+    output_filename: "flask_{version}.pdf"
+    rate_limit: 1  # requests per second
+
+# Advanced configuration (optional)
+# browser:
+#   enabled: false
+#   wait_for: ".content-loaded"
+#   timeout: 10000  # ms
+
+# Multiple page handling (optional)
+# pagination:
+#   enabled: false
+#   selector: ".pagination a"
+#   max_pages: 10 

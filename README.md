@@ -1,6 +1,8 @@
 # docs-web-scrapper
 
-A general web scraper made specifically for documentation that can be aggregated
+A general web scraper made specifically for documentation that can be aggregated.
+
+Offers the optimal balance of simplicity, capability, and developer productivity. It requires minimal setup while providing robust version extraction and PDF generation capabilities.
 
 # Python Documentation Scraper: Technical Implementation Specification
 
