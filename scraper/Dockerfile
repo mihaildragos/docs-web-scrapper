@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium-driver \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
@@ -33,11 +32,10 @@ COPY download_paddle_models.py .
 RUN python download_paddle_models.py
 
 # Copy application code
-COPY *.py .
-COPY lib/ ./lib/
+COPY advanced_doc_scraper.py .
 
 # Create directories for output
 RUN mkdir -p /app/docs /app/docs/debug
 
 # Command to run the application (will be overridden by docker-compose)
-CMD ["python", "workflow_scraper.py", "--help"]
+CMD ["python", "advanced_doc_scraper.py", "--help"]

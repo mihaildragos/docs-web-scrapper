@@ -10,24 +10,20 @@ services:
     environment:
       - MODEL_ID=deepseek-ai/deepseek-llm-1.3b-base
       - DEVICE=cpu
-      - MAX_LENGTH=512
-      - MAX_NEW_TOKENS=256
+      - MAX_LENGTH=1024
+      - MAX_NEW_TOKENS=512
       - TEMPERATURE=0.7
       - DEBUG=false
     volumes:
       - deepseek_models:/app/model_cache
       - ./deepseek-server/logs:/app/logs
-    restart: on-failure:3
-    deploy:
-      resources:
-        limits:
-          memory: 5G
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/status"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 300s
+      start_period: 180s
 
   scraper:
     build:
@@ -40,14 +36,9 @@ services:
     volumes:
       - ./output:/app/docs
       - paddle_models:/root/.paddleocr
-      - ./session_data:/app/session_data
     environment:
       - LLM_ENDPOINT=http://deepseek:8000
-    command: ["python", "workflow_scraper.py", "--help"]
-    deploy:
-      resources:
-        limits:
-          memory: 2G
+    command: ["python", "advanced_doc_scraper.py", "--help"]
 
 volumes:
   paddle_models:
