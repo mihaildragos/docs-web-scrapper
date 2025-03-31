@@ -16,12 +16,12 @@ import argparse
 from urllib.parse import urljoin, urlparse
 import re
 import numpy as np
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Dict, Any
 
 # Web scraping & browser automation
 import requests
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright, Page, Browser
+from playwright.sync_api import sync_playwright, Page
 import html2text
 
 # Visual AI

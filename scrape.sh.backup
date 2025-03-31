@@ -1,0 +1,113 @@
+#!/bin/bash
+# scrape.sh - Convenience script for running the document scraper
+
+# Display help information
+function show_help {
+    echo "Usage: $0 <url> [options]"
+    echo ""
+    echo "Options:"
+    echo "  --output, -o DIR       Output directory (default: docs)"
+    echo "  --depth, -d NUM        Maximum crawl depth (default: 3)"
+    echo "  --delay, -w SEC        Delay between requests in seconds (default: 1.0)"
+    echo "  --llm URL              DeepSeek LLM endpoint (default: http://deepseek:8000)"
+    echo "  --visible              Run browser in visible mode (not headless)"
+    echo "  --debug                Enable debug mode (save screenshots, etc.)"
+    echo "  --workers NUM          Maximum number of worker threads (default: 4)"
+    echo "  --help, -h             Show this help message"
+    echo ""
+    echo "Example: $0 https://docs.example.com --depth 2 --debug"
+    exit 0
+}
+
+# Check if no arguments or help requested
+if [ "$#" -lt 1 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    show_help
+fi
+
+# Extract the URL (first argument)
+URL="$1"
+shift
+
+# Process arguments
+DOCKER_ARGS=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    --output | -o)
+        DOCKER_ARGS="$DOCKER_ARGS --output $2"
+        shift 2
+        ;;
+    --depth | -d)
+        DOCKER_ARGS="$DOCKER_ARGS --depth $2"
+        shift 2
+        ;;
+    --delay | -w)
+        DOCKER_ARGS="$DOCKER_ARGS --delay $2"
+        shift 2
+        ;;
+    --llm)
+        DOCKER_ARGS="$DOCKER_ARGS --llm $2"
+        shift 2
+        ;;
+    --visible)
+        DOCKER_ARGS="$DOCKER_ARGS --visible"
+        shift
+        ;;
+    --debug)
+        DOCKER_ARGS="$DOCKER_ARGS --debug"
+        shift
+        ;;
+    --workers)
+        # We'll check if the workers argument is supported and handle it accordingly
+        echo "Note: The --workers option will be used if supported by the container"
+        WORKERS_ARG="--workers $2"
+        shift 2
+        ;;
+    *)
+        echo "Unknown option: $1"
+        show_help
+        ;;
+    esac
+done
+
+# Ensure the DeepSeek server is running
+echo "Ensuring DeepSeek server is running..."
+docker-compose up -d deepseek
+
+# Wait for DeepSeek to be ready
+echo "Waiting for DeepSeek server to be ready..."
+MAX_RETRIES=30
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/status || echo "000")
+    if [ "$STATUS" = "200" ]; then
+        echo "DeepSeek server is ready!"
+        break
+    fi
+    echo "Waiting for DeepSeek server... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    sleep 5
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "Error: DeepSeek server did not become ready in time"
+    exit 1
+fi
+
+# Check if the container supports the workers argument
+echo "Checking container version..."
+SUPPORTS_WORKERS=$(docker-compose run --rm scraper python advanced_doc_scraper.py --help | grep -c "\-\-workers")
+
+# Run the scraper with appropriate arguments
+echo "Starting scraper for URL: $URL"
+if [ "$SUPPORTS_WORKERS" -gt 0 ] && [ ! -z "$WORKERS_ARG" ]; then
+    echo "Using workers argument: $WORKERS_ARG"
+    docker-compose run --rm scraper python advanced_doc_scraper.py "$URL" $DOCKER_ARGS $WORKERS_ARG
+else
+    # If workers not supported, run without it
+    if [ ! -z "$WORKERS_ARG" ]; then
+        echo "Container version doesn't support workers argument, ignoring it"
+    fi
+    docker-compose run --rm scraper python advanced_doc_scraper.py "$URL" $DOCKER_ARGS
+fi
+
+echo "Scraping completed. Results saved to ./output directory."

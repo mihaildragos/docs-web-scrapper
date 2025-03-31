@@ -90,6 +90,7 @@ async def load_model_async():
         start_time = time.time()
 
         # Load tokenizer
+        logger.info("Loading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
         # Simple model loading for Mac compatibility
@@ -122,11 +123,15 @@ async def load_model_async():
     model_loading = False
 
 
+# Start loading the model immediately when the server starts
 @app.on_event("startup")
 async def startup_event():
     """Start model loading when the API server starts"""
+    logger.info("Server starting up, initiating model loading...")
     background_tasks = BackgroundTasks()
     background_tasks.add_task(load_model_async)
+    # Force the background task to start immediately
+    await load_model_async()
 
 
 @app.get("/")
